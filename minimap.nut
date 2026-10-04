@@ -438,9 +438,9 @@ function MinimapInit()
 		//printmap()
 		local ROOMCOLORS={}
 		IncludeScript("rng_seed.nut")
-		local texture=surface.ValidateTexture("vgui/cursors/arrow",true,true,true)
-		local texturestair_up=surface.ValidateTexture("vgui/cursors/icon_arrow",true,true,true)
-		local texturestair_down=surface.ValidateTexture("sellface-icons/sw_exit",true,true,true)
+		local texture=surface.ValidateTexture("vgui/cursors/arrow",true,false,false)
+		local texturestair_up=surface.ValidateTexture("vgui/cursors/icon_arrow",true,false,false)
+		local texturestair_down=surface.ValidateTexture("sellface-icons/sw_exit",true,false,false)
 		local size=Convars.GetFloat("sourceworld_minimap_size");
 		local range=Convars.GetFloat("sourceworld_minimap_range");
 		local AlphaMultiplier=0.75

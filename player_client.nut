@@ -2475,9 +2475,20 @@ if (CLIENT_DLL)
 				PlrAngOffset = Vector(PlrAngOffset.x, PlrAngOffset.y, -FlashLightOffsetRange);
 			if ((LastPlrAng-MainViewAngles()).Length()>1) LastMoveTime=Time();
 			
-			local MyFlashLight=Entities.FindByName(null,"playerflashlight")
-			local MyFlashLight2=Entities.FindByName(MyFlashLight,"playerflashlight")
+			// The shared name also belongs to the glow sprite; entity order is not stable.
+			local MyFlashLight=null
+			local MyFlashLight2=null
 			local MyFlashLightSprite=null
+			local flashEntity=null
+			while (flashEntity=Entities.FindByName(flashEntity,"playerflashlight"))
+			{
+				if (flashEntity.GetClassname()=="env_projectedtexture")
+				{
+					if (!MyFlashLight) MyFlashLight=flashEntity;
+					else if (!MyFlashLight2) MyFlashLight2=flashEntity;
+				}
+				else if (flashEntity.GetClassname()=="env_sprite") MyFlashLightSprite=flashEntity;
+			}
 			
 			if (!MyFlashLight) return 0.0
 			if (!MyFlashLight2) return 0.0
@@ -2501,33 +2512,31 @@ if (CLIENT_DLL)
 			MyFlashLight2.SetLocalOrigin(MainViewOrigin()+Vector(0,0,-8)-MainViewForward()*12);
 			MyFlashLight2.SetLocalAngles(MainViewAngles()+PlrAngOffset+bob);
 			
-			while (MyFlashLightSprite=Entities.FindByName(MyFlashLightSprite,"playerflashlight"))
+			if (MyFlashLightSprite) MyFlashLightSprite.SetRenderAlpha(0);
+
+			local ply=Entities.FindByName(null,"PlayerModel")
+			if (ply)
 			{
-				if (MyFlashLightSprite.GetClassname()=="env_sprite")
+				local attach=ply.LookupAttachment("chest")
+				if (attach > 0)
 				{
-					MyFlashLightSprite.SetRenderAlpha(0)
-					break
+					local p=ply.GetAttachmentOrigin(attach)
+					local a=ply.GetAttachmentAngles(attach)
+
+					MyFlashLight.SetLocalOrigin(p);
+					MyFlashLight.SetLocalAngles(a);
+
+					if (MyFlashLightSprite)
+					{
+						MyFlashLightSprite.SetLocalOrigin(p+AngleVectors(a)*5+AngleVectors(a+Vector(0,-90,0))*3+AngleVectors(a+Vector(-90,0,0))*3);
+						MyFlashLightSprite.SetLocalAngles(a);
+						if (PlayerFlashlight) MyFlashLightSprite.SetRenderAlpha(200)
+						else MyFlashLightSprite.SetRenderAlpha(0)
+					}
 				}
 			}
-			
-			if (Entities.FindByName(null,"PlayerModel"))
-			{
-				//printl(PlayerFlashlight)
-				local ply=Entities.FindByName(null,"PlayerModel")
-				local attach=ply.LookupAttachment("chest")
-				local p=ply.GetAttachmentOrigin(attach)
-				local a=ply.GetAttachmentAngles(attach)
-				
-				MyFlashLight.SetLocalOrigin(p);
-				MyFlashLight.SetLocalAngles(a);
 
-				MyFlashLightSprite.SetLocalOrigin(p+AngleVectors(a)*5+AngleVectors(a+Vector(0,-90,0))*3+AngleVectors(a+Vector(-90,0,0))*3);
-				MyFlashLightSprite.SetLocalAngles(a);
-				if (PlayerFlashlight) MyFlashLightSprite.SetRenderAlpha(200)
-				else MyFlashLightSprite.SetRenderAlpha(0)
-			}
-			
-			
+
 			LastPlrAng = MainViewAngles()
 			
 			return 0.0
