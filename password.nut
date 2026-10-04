@@ -90,10 +90,13 @@ if ( CLIENT_DLL )
 		//printl(correct_code)
 	}
 	
+	// File-backed material: load once per UI initialization, never during Paint.
+	local KeypadTexture = surface.ValidateTexture("keypad", true, false, false);
+
 	function Paint()
 	{
 		surface.SetColor(255,255,255,255)
-		surface.SetTexture(surface.ValidateTexture("keypad",true,true,true))
+		surface.SetTexture(KeypadTexture)
 		surface.DrawTexturedRect(0,0,512,512)
 		foreach( i,dig in text)
 		{

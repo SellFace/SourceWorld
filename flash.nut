@@ -7,6 +7,7 @@
 
 MyFlashLight <- null;
 MyFlashLight2 <- null;
+FlashLightSprite <- null;
 DisableFlashLight <- null;
 FlashLightState <- false;
 KeyReleased <- true;
@@ -43,16 +44,21 @@ function OnStartRunning()
 	
 	FlashLightSetByDifficulty();
 	
-	// Preventing have multiple flashlight entities in the map
-	local theflashlighttest = Entities.FindByName(null, "playerflashlight");
-	if(theflashlighttest != null)
-		theflashlighttest.Destroy();
-	if(theflashlighttest != null)
-		theflashlighttest.Destroy();
-	theflashlighttest = Entities.FindByName(null, "playernoflashlight");
-	if(theflashlighttest != null)
-		theflashlighttest.Destroy();
-		
+	// Collect before removal: Destroy may invalidate the search cursor.
+	foreach (name in ["playerflashlight", "playernoflashlight"])
+	{
+		local obsolete = [];
+		local entity = null;
+		while (entity = Entities.FindByName(entity, name)) obsolete.append(entity);
+		foreach (oldEntity in obsolete)
+		{
+			if (oldEntity.IsValid()) oldEntity.Destroy();
+		}
+	}
+	FlashLightState = false;
+	// Projected textures require a non-degenerate perspective frustum.
+	FlashLightFOV = clamp(FlashLightFOV, 1.0, 179.0);
+
 	// Spawning flashlight entities.
 	// This is the flashlight.
 	// This is a sound used for noticing how much energy the flashlight has.
@@ -110,6 +116,19 @@ function OnStartRunning()
 		angles = player.GetAngles()
 		spawnflags = 0
 	})
+	// An entity limit can leave only part of the flashlight spawned.
+	if (!FlashLightEntitiesValid() || !FlashLightSprite || !DisableFlashLight)
+	{
+		foreach (entity in [MyFlashLight, MyFlashLight2, FlashLightSprite, DisableFlashLight])
+		{
+			if (entity && entity.IsValid()) entity.Destroy();
+		}
+		MyFlashLight = null;
+		MyFlashLight2 = null;
+		FlashLightSprite = null;
+		DisableFlashLight = null;
+		return;
+	}
 	EntFireByHandle(DisableFlashLight, "Enable", "", 0.00);
 	SettingFlashLightStyle(FlashLightStyle);
 }
@@ -129,10 +148,16 @@ function FlashLightSetByDifficulty()
 	}
 }
 
+function FlashLightEntitiesValid()
+{
+	return MyFlashLight && MyFlashLight.IsValid() && MyFlashLight2 && MyFlashLight2.IsValid();
+}
+
 function SettingFlashLightStyle(thevalue)
 {
 	// You can give player entity an input like "OnTrigger !player RunScriptCodeQuotable SettingFlashLightStyle(0)" to change the style of flashlight.
 	FlashLightStyle = thevalue;
+	if (!FlashLightEntitiesValid()) return;
 	switch(FlashLightStyle)
 	{
 		// Flashlight style 0, which makes flashlight fixed on playermodel's head.
@@ -156,6 +181,7 @@ function SettingFlashLightStyle(thevalue)
 
 function ToggleFlashlight()
 {
+	if (!FlashLightEntitiesValid() || !player.IsAlive()) return;
 	self.EmitSound("items/flashlight"+(1+FlashLightState.tointeger())+".wav");
 	
 	if(!FlashLightState)
@@ -164,10 +190,10 @@ function ToggleFlashlight()
 		EntFireByHandle(MyFlashLight, "TurnOn");
 		EntFireByHandle(MyFlashLight2, "TurnOn");
 		
-		for(local i=0;i<10;i++)
+		for(local i=1;i<=10;i++)
 		{
-			EntFireByHandle(MyFlashLight, "fov",(i*FlashLightFOV)/(10.0),i*0.01);
-			EntFireByHandle(MyFlashLight2, "fov",(i*110)/(10.0),i*0.01);
+			EntFireByHandle(MyFlashLight, "fov",clamp((i*FlashLightFOV)/10.0, 1.0, 179.0),(i-1)*0.01);
+			EntFireByHandle(MyFlashLight2, "fov",(i*110)/10.0,(i-1)*0.01);
 		}
 		
 		//EntFireByHandle(MyFlashLightSND, "PlaySound");
@@ -224,6 +250,11 @@ local LastSpark=Time();
 
 function PlayerRunCommand()
 {
+	if (!FlashLightEntitiesValid())
+	{
+		FlashLightState = false;
+		return;
+	}
 	
 	if(LastTime == Time())
 	{

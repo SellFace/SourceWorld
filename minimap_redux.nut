@@ -234,8 +234,8 @@ if (CLIENT_DLL)
 			return;
 		}	
 		
-		local texture=surface.ValidateTexture("vgui/cursors/arrow",true,true,true)
-		local iconatlas=surface.ValidateTexture("vgui/map_icons",true,true,true)
+		local texture=surface.ValidateTexture("vgui/cursors/arrow",true,false,false)
+		local iconatlas=surface.ValidateTexture("vgui/map_icons",true,false,false)
 
 		local AlphaMultiplier=0.75
 		

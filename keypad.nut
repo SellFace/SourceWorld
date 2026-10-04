@@ -74,6 +74,9 @@ function Everything()
 		
 		
 		
+		// File-backed material: load once per UI initialization, never during Paint.
+		local KeypadTexture = surface.ValidateTexture("vgui/keypad", true, false, false);
+
 		function Paint()
 		{
 			if ((Time()-LastPress)>0.1) LastKey=null;
@@ -89,7 +92,7 @@ function Everything()
 			
 			
 			surface.SetColor(255,255,255,255)
-			surface.SetTexture(surface.ValidateTexture("vgui/keypad",true,true,true))
+			surface.SetTexture(KeypadTexture)
 			
 			surface.DrawTexturedRect(YRES(SIZE)*(1-mod)*0.5,YRES(SIZE)*(1-mod)*0.5,YRES(SIZE)*mod,YRES(SIZE)*mod)
 			
